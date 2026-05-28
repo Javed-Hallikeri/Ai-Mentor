@@ -80,7 +80,7 @@ const Dashboard = () => {
     };
 
     fetchAllData();
-  }, []);
+  }, [fetchUserProfile]);
   const calculateStats = () => {
     const baseCards = [
       {
