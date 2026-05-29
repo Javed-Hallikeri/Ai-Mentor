@@ -370,6 +370,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
                     print(f"❌ Failed to delete {local_file}: {cleanup_err}")
         else:
             print("⚠️ Keeping local files on disk as a fallback proxy since Cloudinary upload failed.")
+            print("⚠️ Note: These files will remain until the server is restarted or manually cleaned.")
     except Exception as e:
 
         job_status[base_filename] = {
