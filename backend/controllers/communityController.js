@@ -63,7 +63,7 @@ const getCourseDiscussions = async (req, res) => {
     }
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course", courseId: parseInt(courseId) },
+      where: { type: "course", courseId: parseInt(courseId), hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
@@ -91,7 +91,7 @@ const getGlobalDiscussions = async (req, res) => {
   try {
     const { category, sort } = req.query;
 
-    const where = { type: "global" };
+    const where = { type: "global", hiddenAt: null };
     if (category && category !== "All Categories") {
       where.category = category;
     }
@@ -382,7 +382,7 @@ const getAllCoursePosts = async (req, res) => {
     const { sort } = req.query;
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course" },
+      where: { type: "course", hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
