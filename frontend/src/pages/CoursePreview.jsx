@@ -18,7 +18,7 @@ function safeGet(obj, path, fallback = undefined) {
 }
 /* build candidate URLs for an image path */
 function buildImageCandidates(imagePath) {
-    const placeholder = "/ui/course-hero-placeholder.jpg";
+    const placeholder = "/AI_Tutor_New_UI/Course_Preview/thumbnail_img.png";
     if (!imagePath) return [placeholder];
     const p = String(imagePath).trim();
     if (!p) return [placeholder];
@@ -64,11 +64,11 @@ export default function CoursePreview() {
     const heroCandidatesRef = useRef([]);
     const heroIndexRef = useRef(0);
     // instructor image candidates + state (brand-first)
-    const [instructorSrc, setInstructorSrc] = useState("/ui/avatar-4.png");
+    const [instructorSrc, setInstructorSrc] = useState("/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg");
     const instructorCandidatesRef = useRef([]);
     const instructorIndexRef = useRef(0);
     // trust badge candidates + state (brand-first)
-    const [trustSrc, setTrustSrc] = useState("/ui/trust-badge.png");
+    const [trustSrc, setTrustSrc] = useState("/AI_Tutor_New_UI/Course_Preview/US.png");
     const trustCandidatesRef = useRef([]);
     const trustIndexRef = useRef(0);
     // fetch meta & learning (use API_BASE_URL)
@@ -118,7 +118,7 @@ export default function CoursePreview() {
                     const heroCandidates = buildImageCandidates(heroPath);
                     heroCandidatesRef.current = heroCandidates;
                     heroIndexRef.current = 0;
-                    setHeroSrc(heroCandidates[0] || "/ui/course-hero-placeholder.jpg");
+                    setHeroSrc(heroCandidates[0] || "/AI_Tutor_New_UI/Course_Preview/thumbnail_img.png");
                     // prepare instructor image candidates: brand-first then backend candidates
                     const brandInstructorPaths = [
                         "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
@@ -131,11 +131,11 @@ export default function CoursePreview() {
                     instructorCandidatesRef.current = [
                         ...brandInstructorPaths,
                         ...backendInstructorCandidates,
-                        "/ui/avatar-4.png",
+                        "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
                     ];
                     instructorIndexRef.current = 0;
                     setInstructorSrc(
-                        instructorCandidatesRef.current[0] || "/ui/avatar-4.png",
+                        instructorCandidatesRef.current[0] || "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
                     );
                     // prepare trust badge candidates (brand-first)
                     const brandTrustPaths = [
@@ -145,10 +145,10 @@ export default function CoursePreview() {
                     ];
                     trustCandidatesRef.current = [
                         ...brandTrustPaths,
-                        "/ui/trust-badge.png",
+                        "/AI_Tutor_New_UI/Course_Preview/US.png",
                     ];
                     trustIndexRef.current = 0;
-                    setTrustSrc(trustCandidatesRef.current[0] || "/ui/trust-badge.png");
+                    setTrustSrc(trustCandidatesRef.current[0] || "/AI_Tutor_New_UI/Course_Preview/US.png");
                 }
             } catch (err) {
                 if (!cancelled) {
@@ -324,8 +324,8 @@ export default function CoursePreview() {
 
         // ✅ Load Razorpay script on demand
         const loaded = await loadRazorpayScript();
-        if (!loaded || !window.Razorpay) {
-            toast.error("Razorpay SDK failed to load. Check your connection.");
+        if (!loaded || typeof window.Razorpay !== "function") {
+            toast.error("Razorpay is blocked (likely by an AdBlocker or Brave Shields). Please disable it to pay.");
             setIsPurchasing(false);
             return;
         }
