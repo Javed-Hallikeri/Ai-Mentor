@@ -170,6 +170,10 @@ function CoursesPage() {
   // ── Filter panel toggle ───────────────────────────────────────────────────
   const [showFilters, setShowFilters] = useState(false);
 
+  // ── Search Hooks ──────────────────────────────────────────────────────────
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   // ── Filter state ──────────────────────────────────────────────────────────
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedPriceTypes, setSelectedPriceTypes] = useState([]);
@@ -185,10 +189,13 @@ function CoursesPage() {
   );
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
-  const fetchCourses = async () => {
+  const fetchCourses = async (searchQuery = "") => {
     try {
       setLoading(true);
-      const response = await callApi("/admin/courses");
+      const endpoint = searchQuery 
+        ? `/admin/courses?search=${encodeURIComponent(searchQuery)}` 
+        : "/admin/courses";
+      const response = await callApi(endpoint);
       const coursesList = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
@@ -202,7 +209,21 @@ function CoursesPage() {
     }
   };
 
-  useEffect(() => { fetchCourses(); }, []);
+      // Debounce effect logic loop
+      useEffect(() => {
+        if (search === "") {
+          setDebouncedSearch("");
+          fetchCourses("");
+          return;
+        }
+
+        const timer = setTimeout(() => {
+          setDebouncedSearch(search);
+          fetchCourses(search);
+        }, 500);
+
+        return () => clearTimeout(timer);
+      }, [search]);
 
   // ── Filtered + sorted courses ─────────────────────────────────────────────
   const filteredCourses = useMemo(() => {
@@ -292,6 +313,7 @@ function CoursesPage() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("newest");
+    setSearch("");
   };
   // ── Add course ────────────────────────────────────────────────────────────
   const handleAddCourse = async (e) => {
@@ -459,10 +481,32 @@ return (
   <>
     {/* ── Header ──────────────────────────────────────────────────────────── */}
     <div className="border-b border-border px-4 py-4 sm:px-6 md:px-8 sm:py-6 flex flex-wrap gap-3 items-center justify-between">
-      <h2 className="text-2xl sm:text-3xl font-semibold">
-        Active Courses
-      </h2>
-      <div className="flex gap-2 items-center">
+        <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+          <h2 className="text-2xl sm:text-3xl font-semibold">
+            Active Courses
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+          {/* Integrated Search Element */}
+          <div className="relative flex-1 sm:flex-initial min-w-[200px]">
+            <input
+              type="text"
+              placeholder="Search title or category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 sm:h-10 w-full sm:w-64 pl-4 pr-8 rounded-xl border border-border bg-canvas text-xs font-medium text-main focus:border-teal-500 outline-none transition-all"
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch("")} 
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-red-500 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -556,8 +600,11 @@ return (
             <SortDropdown value={sortBy} onChange={setSortBy} />
           </div>
           {/* Active chips + Clear All */}
-          {hasActiveFilters && (
+          {(hasActiveFilters || search) && (
             <div className="flex flex-wrap gap-1.5 items-center">
+              {search && (
+                <FilterChip label={`Search: ${search}`} onRemove={() => setSearch("")} />
+              )}
               {chips.map((chip, i) => (
                 <FilterChip key={i} label={chip.label} onRemove={chip.onRemove} />
               ))}
@@ -575,10 +622,10 @@ return (
       </div>
 
       {/* ── Results summary bar ──────────────────────────────────────────────── */}
-      {hasActiveFilters && (
+      {(hasActiveFilters || search) && (
         <div className="px-4 sm:px-6 md:px-8 py-2 flex items-center gap-2 text-[10px] text-muted font-semibold uppercase tracking-wider border-b border-border bg-canvas-alt/20">
           <span className="text-teal-500 font-black">{filteredCourses.length}</span>
-          <span>of {courses.length} courses match</span>
+          <span>match results found</span>
         </div>
       )}
 
@@ -648,7 +695,7 @@ return (
             ) : (
               <tr>
                 <td colSpan="6">
-                  <EmptyState onClear={clearAll} />
+                  <EmptyState onClear={clearAll} loading={loading} />
                 </td>
               </tr>
             )}
@@ -656,7 +703,6 @@ return (
         </table>
       </div>
 
-      {/* Add Course Modal */}
       {/* Mobile card list (hidden on desktop) */}
       <div className="sm:hidden divide-y divide-border">
         {filteredCourses.length > 0 ? (
@@ -668,7 +714,7 @@ return (
                   <p className="text-muted text-[10px] uppercase tracking-tighter mt-0.5">ID: {course.id}</p>
                 </div>
                 <span className="text-teal-500 font-black text-[9px] uppercase tracking-widest shrink-0 mt-0.5">
-                  Published
+                  {course.status || "published"}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2.5 items-center">
@@ -693,7 +739,7 @@ return (
             </div>
           ))
         ) : (
-          <EmptyState onClear={clearAll} />
+          <EmptyState onClear={clearAll} loading={loading} />
         )}
       </div>
 
@@ -817,7 +863,18 @@ return (
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
-function EmptyState({ onClear }) {
+function EmptyState({ onClear, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 gap-4 text-center opacity-50 animate-in fade-in duration-200">
+        {/* Animated Teal Spinner */}
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        {/* Verbatim Matching Text Styling */}
+        <p className="text-sm font-black uppercase tracking-widest text-muted italic">Searching...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 gap-3 text-center animate-in fade-in duration-300">
       <div className="w-14 h-14 rounded-2xl bg-canvas-alt border border-border flex items-center justify-center">
@@ -825,7 +882,7 @@ function EmptyState({ onClear }) {
       </div>
       <div>
         <p className="text-main font-bold">No courses match your filters</p>
-        <p className="text-muted text-sm mt-1">Try adjusting or clearing the active filters above.</p>
+        <p className="text-muted text-sm mt-1">Try adjusting or clearing the active filters or search phrases above.</p>
       </div>
     </div>
   );
