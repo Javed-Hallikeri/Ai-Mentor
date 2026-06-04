@@ -48,11 +48,15 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         };
 
-        const [coursesRes, statsRes,res] = await Promise.all([
+        const [coursesResult, statsResult, certResult] = await Promise.allSettled([
           fetch("/api/courses", { headers }),
           fetch("/api/courses/stats/cards", { headers }),
-          fetch("/api/certificate/list", {headers}),
+          fetch("/api/certificate/list", { headers }),
         ]);
+
+        const coursesRes = coursesResult.status === "fulfilled" ? coursesResult.value : null;
+        const statsRes   = statsResult.status  === "fulfilled" ? statsResult.value  : null;
+        const res        = certResult.status   === "fulfilled" ? certResult.value   : null;
 
         if (res.ok) {
           const json = await res.json();
@@ -71,8 +75,7 @@ const Dashboard = () => {
         const allCourses = await coursesRes.json();
         const { statsCards } = await statsRes.json();
 
-        setCoursesData({ allCourses, statsCards });
-        await fetchUserProfile();
+        setCoursesData({ allCourses, statsCards });git 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -81,7 +84,7 @@ const Dashboard = () => {
     };
 
     fetchAllData();
-  }, [fetchUserProfile]);
+  }, []);
   const calculateStats = () => {
     const baseCards = [
       {
