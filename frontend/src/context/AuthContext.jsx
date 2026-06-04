@@ -69,42 +69,41 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchUserProfile = useCallback(async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const response = await apiFetch("/api/users/profile");
-    if (!response || !response.ok) return;  
+      const response = await apiFetch("/api/users/profile");
+      if (!response || !response.ok) return;
 
-    const userData = await response.json();
+      const userData = await response.json();
 
-    const newUser = {
-      ...userData,
-      token: localStorage.getItem("token"),
-      avatar_url: userData.avatar_url || null,
-      isProfileComplete: userData.isProfileComplete ?? false,
-      isGoogleUser: userData.isGoogleUser ?? false,
-      googleId: userData.googleId ?? null,
-      hasPassword: userData.hasPassword ?? false,
-    };
+      const newUser = {
+        ...userData,
+        token: localStorage.getItem("token"),
+        avatar_url: userData.avatar_url || null,
+        isProfileComplete: userData.isProfileComplete ?? false,
+        isGoogleUser: userData.isGoogleUser ?? false,
+        googleId: userData.googleId ?? null,
+        hasPassword: userData.hasPassword ?? false,
+      };
 
-    setUser(prev => {
-      if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
-      localStorage.setItem("user", JSON.stringify(newUser));
-      return newUser;
-    });
+      setUser(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
+        localStorage.setItem("user", JSON.stringify(newUser));
+        return newUser;
+      });
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  }, []);
 
-  } catch (error) {  // ← catch closes the try
-    console.error("Error fetching user profile:", error);
-  }
-}, []);
-
-const hasFetchedProfile = useRef(false);
+  const hasFetchedProfile = useRef(false);
 
   useEffect(() => {
     if (isAuthenticated && !hasFetchedProfile.current) {
-    hasFetchedProfile.current = true;
-    fetchUserProfile();
+      hasFetchedProfile.current = true;
+      fetchUserProfile();
     }
   }, [isAuthenticated, fetchUserProfile]);
 

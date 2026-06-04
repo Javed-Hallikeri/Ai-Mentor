@@ -55,21 +55,20 @@ const Dashboard = () => {
         ]);
 
         const coursesRes = coursesResult.status === "fulfilled" ? coursesResult.value : null;
-        const statsRes   = statsResult.status  === "fulfilled" ? statsResult.value  : null;
-        const res        = certResult.status   === "fulfilled" ? certResult.value   : null;
+        const statsRes = statsResult.status === "fulfilled" ? statsResult.value : null;
+        const res = certResult.status === "fulfilled" ? certResult.value : null;
 
         if (res && res.ok) {
           const json = await res.json();
           setData(json);
-        }
-         if (!res.ok) {
+        } else if (res && !res.ok) {
           console.error(`Failed to fetch certificates: ${res.status}`);
         }
-        if (!coursesRes.ok) {
-          throw new Error(`Courses API failed: ${coursesRes.status}`);
+        if (!coursesRes || !coursesRes.ok) {
+          throw new Error(`Courses API failed: ${coursesRes?.status}`);
         }
-        if (!statsRes.ok) {
-          throw new Error(`Stats API failed: ${statsRes.status}`);
+        if (!statsRes || !statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes?.status}`);
         }
 
         const allCourses = await coursesRes.json();
@@ -85,6 +84,7 @@ const Dashboard = () => {
 
     fetchAllData();
   }, []);
+
   const calculateStats = () => {
     const baseCards = [
       {
@@ -320,7 +320,7 @@ const Dashboard = () => {
     try {
       // If the course is free, attempt enrollment first
       const priceValue = Number(course.priceValue || 0);
-        if (priceValue === 0) {
+      if (priceValue === 0) {
         const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
           method: 'POST',
           headers: {
